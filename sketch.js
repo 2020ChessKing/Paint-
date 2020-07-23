@@ -4,11 +4,12 @@ const Engine = Matter.Engine;
 var eraser; 
 var pencil;
 var color, thickness;
+var database;
 
 function preload()
 {
   eraser = loadImage("eraser.png");
-  pencil = loadImage("pencil.png");
+  pencil = loadImage("Pencil.png");
 }
 
 
@@ -16,6 +17,7 @@ function setup() {
   engine = Engine.create();
   world = engine.world;
   createCanvas(displayWidth, displayHeight - 115);
+  database = firebase.database();
   background(0);
 
   fill("white");
@@ -49,14 +51,25 @@ function setup() {
   thickness = 10;
 }
 
-dots = [];
+var dots = [];
+var db_drawing = [];
 
-function draw() {
+function draw() 
+{
+  readData();
+  beginShape();
   Engine.update(engine);
 
+  for(var i  = 0; i < db_drawing.length; i++)
+  {
+   vertex(db_drawing[i].x, db_drawing[i].y);
+   endShape();
+  }
 
   drawSprites();
 }
+
+
 
 function keyPressed()
 {
@@ -135,8 +148,25 @@ function keyPressed()
 
 function mouseDragged()
 {
+  var point = {
+    x : mouseX,
+    y : mouseY
+  }
   fill(color);
   noStroke();
-  rect(mouseX, mouseY, thickness, thickness);
+  ellipse(mouseX, mouseY, thickness, thickness);
+  dots.push(point);
+  var drawings = database.ref('drawing');
+  drawings.set({
+    "d" : dots,
+  });
+
 }
+
+function readData()
+{ 
+  database.ref('drawing/d').on('value', (data) =>
+ {
+    db_drawing = data.val()
+ }) }
 
